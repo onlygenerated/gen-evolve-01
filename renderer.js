@@ -3,7 +3,14 @@
  */
 
 class Renderer {
-  static render(canvas, genome) {
+  constructor(canvas, genome) {
+    this.canvas = canvas;
+    this.genome = genome;
+  }
+
+  render() {
+    const canvas = this.canvas;
+    const genome = this.genome;
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
@@ -16,11 +23,11 @@ class Renderer {
     const rng = new SeededRandom(genome.seed);
 
     // Generate palette colors
-    const palette = this.generatePalette(genome.palette, rng);
+    const palette = Renderer.generatePalette(genome.palette, rng);
 
     // Render each layer
     for (const layer of genome.layers) {
-      this.renderLayer(ctx, width, height, layer, rng, palette);
+      Renderer.renderLayer(ctx, width, height, layer, rng, palette);
     }
   }
 
