@@ -15,30 +15,86 @@
       font-family: 'Courier New', monospace;
       background: #1a1a1a;
       color: #eee;
+      overflow-x: hidden;
+    }
+
+    /* Mobile-first layout */
+    #app {
       display: flex;
-      height: 100vh;
-      overflow: hidden;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
+    /* Collapsible sidebar */
     #sidebar {
-      width: 250px;
       background: #222;
-      padding: 20px;
-      overflow-y: auto;
-      border-right: 1px solid #444;
+      border-bottom: 1px solid #444;
+      position: relative;
     }
 
-    #sidebar h2 {
+    #sidebar.collapsed #sidebarContent {
+      display: none;
+    }
+
+    #sidebarToggle {
+      width: 100%;
+      padding: 15px;
+      background: #333;
+      border: none;
+      color: #eee;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: left;
+    }
+
+    #sidebarToggle:hover {
+      background: #444;
+    }
+
+    #sidebarContent {
+      padding: 20px;
+    }
+
+    #sidebarContent h2 {
       font-size: 14px;
       margin-bottom: 15px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
-    #controls {
-      margin-bottom: 30px;
+    /* Parent genome display */
+    #currentParent {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #2a2a2a;
+      border: 2px solid #555;
+      border-radius: 4px;
     }
 
+    #currentParent h3 {
+      font-size: 12px;
+      margin-bottom: 10px;
+      color: #aaa;
+      text-transform: uppercase;
+    }
+
+    #parentPreview {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #000;
+      border: 1px solid #444;
+      margin-bottom: 10px;
+    }
+
+    #parentInfo {
+      font-size: 10px;
+      color: #888;
+    }
+
+    /* Controls */
     #controls label {
       display: block;
       margin-bottom: 5px;
@@ -57,7 +113,7 @@
 
     button {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin-bottom: 10px;
       background: #444;
       border: 1px solid #666;
@@ -77,6 +133,12 @@
       background: #333;
     }
 
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Favorites */
     #favorites {
       margin-top: 20px;
     }
@@ -98,358 +160,439 @@
       border-color: #666;
     }
 
-    .favorite-item img {
+    .favorite-item canvas {
       width: 100%;
       display: block;
     }
 
-    .favorite-remove {
+    .favorite-delete {
       position: absolute;
-      top: 2px;
-      right: 2px;
+      top: 5px;
+      right: 5px;
+      background: rgba(255, 0, 0, 0.7);
+      color: white;
+      border: none;
       width: 20px;
       height: 20px;
-      background: rgba(0,0,0,0.7);
-      color: #fff;
-      border: none;
       padding: 0;
-      font-size: 14px;
-      line-height: 20px;
+      font-size: 12px;
       cursor: pointer;
+      border-radius: 2px;
     }
 
+    /* Main content */
     #main {
       flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    /* Comparison view */
+    #comparisonView {
       display: flex;
       flex-direction: column;
-      padding: 20px;
-      overflow: hidden;
-    }
-
-    #breedingView {
-      display: flex;
       gap: 20px;
-      justify-content: center;
       align-items: center;
-      flex: 1;
     }
 
-    .breeding-canvas {
+    .child-container {
+      width: 100%;
+      max-width: 500px;
+      background: #222;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .child-container canvas {
+      width: 100%;
+      display: block;
       cursor: pointer;
-      border: 3px solid #333;
-      transition: border-color 0.2s;
+      border: 2px solid #444;
+      margin-bottom: 10px;
     }
 
-    .breeding-canvas:hover {
+    .child-container canvas:hover {
       border-color: #666;
     }
 
+    .child-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .child-actions button {
+      flex: 1;
+      margin: 0;
+    }
+
+    /* Detail view */
     #detailView {
       display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      flex: 1;
+      text-align: center;
     }
 
     #detailView.active {
-      display: flex;
+      display: block;
     }
 
     #detailCanvas {
-      border: 3px solid #444;
       max-width: 100%;
-      max-height: calc(100vh - 200px);
+      border: 2px solid #444;
+      margin-bottom: 20px;
     }
 
     #detailActions {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 600px;
+      margin: 0 auto;
     }
 
     #detailActions button {
-      width: auto;
-      padding: 10px 20px;
+      flex: 1;
+      min-width: 150px;
+      margin: 0;
     }
 
-    #loading {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.8);
-      padding: 20px 40px;
-      border: 1px solid #666;
-      display: none;
+    .loading {
+      opacity: 0.5;
+      pointer-events: none;
     }
 
-    #loading.active {
-      display: block;
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+
+    /* Desktop layout */
+    @media (min-width: 768px) {
+      #app {
+        flex-direction: row;
+      }
+
+      #sidebar {
+        width: 300px;
+        border-bottom: none;
+        border-right: 1px solid #444;
+        max-height: 100vh;
+        overflow-y: auto;
+      }
+
+      #sidebar.collapsed {
+        width: 50px;
+      }
+
+      #sidebarToggle {
+        text-align: center;
+      }
+
+      #comparisonView {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .child-container {
+        max-width: 300px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .child-container {
+        max-width: 350px;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="sidebar">
-    <div id="controls">
-      <h2>Controls</h2>
-      <label for="mutationRate">Mutation Rate</label>
-      <input type="range" id="mutationRate" min="0" max="100" value="50">
-      <div id="mutationValue">50%</div>
-      <button id="newGeneration">New Random Generation</button>
+  <div id="app">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <button id="sidebarToggle">☰ CONTROLS & FAVORITES</button>
+      <div id="sidebarContent">
+        <!-- Current Parent -->
+        <div id="currentParent">
+          <h3>Current Parent</h3>
+          <canvas id="parentPreview" width="200" height="200"></canvas>
+          <div id="parentInfo">Generation: 0 | Layers: 0</div>
+        </div>
+
+        <!-- Controls -->
+        <div id="controls">
+          <h2>Mutation Rate</h2>
+          <input type="range" id="mutationRate" min="0" max="100" value="30">
+          <div id="mutationValue">30%</div>
+          <button id="breedBtn">Breed New Generation</button>
+          <button id="randomStartBtn">New Random Start</button>
+        </div>
+
+        <!-- Favorites -->
+        <div id="favorites">
+          <h2>Saved Genomes</h2>
+          <div id="favoritesList"></div>
+        </div>
+      </div>
     </div>
 
-    <div id="favorites">
-      <h2>Favorites</h2>
-      <div id="favoritesList"></div>
-    </div>
-  </div>
+    <!-- Main content -->
+    <div id="main">
+      <!-- Comparison view (3 children) -->
+      <div id="comparisonView">
+        <div class="child-container">
+          <canvas class="child-canvas" width="400" height="400" data-index="0"></canvas>
+          <div class="child-actions">
+            <button class="view-detail-btn" data-index="0">View Detail</button>
+            <button class="breed-from-btn" data-index="0">Breed From This</button>
+          </div>
+        </div>
+        <div class="child-container">
+          <canvas class="child-canvas" width="400" height="400" data-index="1"></canvas>
+          <div class="child-actions">
+            <button class="view-detail-btn" data-index="1">View Detail</button>
+            <button class="breed-from-btn" data-index="1">Breed From This</button>
+          </div>
+        </div>
+        <div class="child-container">
+          <canvas class="child-canvas" width="400" height="400" data-index="2"></canvas>
+          <div class="child-actions">
+            <button class="view-detail-btn" data-index="2">View Detail</button>
+            <button class="breed-from-btn" data-index="2">Breed From This</button>
+          </div>
+        </div>
+      </div>
 
-  <div id="main">
-    <div id="breedingView">
-      <canvas class="breeding-canvas" width="400" height="400" data-index="0"></canvas>
-      <canvas class="breeding-canvas" width="400" height="400" data-index="1"></canvas>
-      <canvas class="breeding-canvas" width="400" height="400" data-index="2"></canvas>
-    </div>
-
-    <div id="detailView">
-      <canvas id="detailCanvas" width="1200" height="1200"></canvas>
-      <div id="detailActions">
-        <button id="saveToFavorites">Save to Favorites</button>
-        <button id="continueBreedin">Continue Breeding</button>
-        <button id="regenerate">Regenerate</button>
+      <!-- Detail view -->
+      <div id="detailView">
+        <canvas id="detailCanvas" width="1200" height="1200"></canvas>
+        <div id="detailActions">
+          <button id="saveGenomeBtn">Save to Favorites</button>
+          <button id="breedFromDetailBtn">Breed From This</button>
+          <button id="regenerateBtn">Regenerate (New Seed)</button>
+          <button id="backToComparisonBtn">Back to Comparison</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div id="loading">
-    <div>Rendering...</div>
-  </div>
-
-  <script src="../gen-complex-01/sediment.js"></script>
-  <script src="algorithms.js"></script>
-  <script src="genome.js"></script>
   <script src="renderer.js"></script>
+  <script src="genome.js"></script>
+  <script src="algorithms.js"></script>
   <script>
-    class EvolutionaryArt {
-      constructor() {
-        this.currentGeneration = [];
-        this.selectedGenome = null;
-        this.favorites = this.loadFavorites();
-        this.mutationRate = 50;
+    // Application state
+    let currentParentGenome = null;
+    let currentChildren = [];
+    let currentDetailGenome = null;
+    let currentDetailIndex = null;
+    let generation = 0;
+    let favorites = [];
 
-        this.setupEventListeners();
-        this.initializeGeneration();
-        this.renderFavorites();
-      }
-
-      setupEventListeners() {
-        // Mutation rate slider
-        const slider = document.getElementById('mutationRate');
-        const valueDisplay = document.getElementById('mutationValue');
-        slider.addEventListener('input', (e) => {
-          this.mutationRate = parseInt(e.target.value);
-          valueDisplay.textContent = `${this.mutationRate}%`;
-        });
-
-        // New generation button
-        document.getElementById('newGeneration').addEventListener('click', () => {
-          this.initializeGeneration();
-        });
-
-        // Breeding canvases
-        document.querySelectorAll('.breeding-canvas').forEach(canvas => {
-          canvas.addEventListener('click', () => {
-            const index = parseInt(canvas.dataset.index);
-            this.selectGenome(index);
-          });
-        });
-
-        // Detail view buttons
-        document.getElementById('saveToFavorites').addEventListener('click', () => {
-          this.saveToFavorites();
-        });
-
-        document.getElementById('continueBreedin').addEventListener('click', () => {
-          this.continueBreedin();
-        });
-
-        document.getElementById('regenerate').addEventListener('click', () => {
-          this.regenerate();
-        });
-      }
-
-      initializeGeneration() {
-        this.showLoading(true);
-
-        setTimeout(() => {
-          const rng = new SeededRandom(Date.now());
-          this.currentGeneration = [];
-
-          for (let i = 0; i < 3; i++) {
-            this.currentGeneration.push(Genome.random(rng));
-          }
-
-          this.renderGeneration();
-          this.showLoading(false);
-        }, 50);
-      }
-
-      renderGeneration() {
-        const canvases = document.querySelectorAll('.breeding-canvas');
-
-        this.currentGeneration.forEach((genome, i) => {
-          Renderer.render(canvases[i], genome);
-        });
-      }
-
-      selectGenome(index) {
-        this.selectedGenome = this.currentGeneration[index];
-        this.showDetailView();
-      }
-
-      showDetailView() {
-        this.showLoading(true);
-
-        setTimeout(() => {
-          document.getElementById('breedingView').style.display = 'none';
-          document.getElementById('detailView').classList.add('active');
-
-          const detailCanvas = document.getElementById('detailCanvas');
-          Renderer.render(detailCanvas, this.selectedGenome);
-
-          this.showLoading(false);
-        }, 50);
-      }
-
-      hideDetailView() {
-        document.getElementById('detailView').classList.remove('active');
-        document.getElementById('breedingView').style.display = 'flex';
-      }
-
-      saveToFavorites() {
-        if (!this.selectedGenome) return;
-
-        const dataURL = Renderer.renderToDataURL(this.selectedGenome, 400, 400);
-
-        this.favorites.push({
-          genome: this.selectedGenome,
-          thumbnail: dataURL,
-          timestamp: Date.now()
-        });
-
-        this.saveFavorites();
-        this.renderFavorites();
-      }
-
-      continueBreedin() {
-        if (!this.selectedGenome) return;
-
-        this.showLoading(true);
-
-        setTimeout(() => {
-          const rng = new SeededRandom(Date.now());
-
-          // Generate 3 mutations of the selected genome
-          this.currentGeneration = [];
-          for (let i = 0; i < 3; i++) {
-            this.currentGeneration.push(
-              Genome.mutate(this.selectedGenome, this.mutationRate, rng)
-            );
-          }
-
-          this.hideDetailView();
-          this.renderGeneration();
-          this.showLoading(false);
-        }, 50);
-      }
-
-      regenerate() {
-        if (!this.selectedGenome) return;
-
-        this.showLoading(true);
-
-        setTimeout(() => {
-          const detailCanvas = document.getElementById('detailCanvas');
-
-          // Create new seed for same genotype
-          const rng = new SeededRandom(Date.now());
-          this.selectedGenome.seed = rng.int(0, 1000000);
-
-          Renderer.render(detailCanvas, this.selectedGenome);
-          this.showLoading(false);
-        }, 50);
-      }
-
-      renderFavorites() {
-        const container = document.getElementById('favoritesList');
-        container.innerHTML = '';
-
-        this.favorites.slice().reverse().forEach((fav, i) => {
-          const actualIndex = this.favorites.length - 1 - i;
-
-          const div = document.createElement('div');
-          div.className = 'favorite-item';
-
-          const img = document.createElement('img');
-          img.src = fav.thumbnail;
-          img.addEventListener('click', () => {
-            this.loadFavorite(actualIndex);
-          });
-
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'favorite-remove';
-          removeBtn.textContent = '×';
-          removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.removeFavorite(actualIndex);
-          });
-
-          div.appendChild(img);
-          div.appendChild(removeBtn);
-          container.appendChild(div);
-        });
-      }
-
-      loadFavorite(index) {
-        this.selectedGenome = JSON.parse(JSON.stringify(this.favorites[index].genome));
-        this.showDetailView();
-      }
-
-      removeFavorite(index) {
-        this.favorites.splice(index, 1);
-        this.saveFavorites();
-        this.renderFavorites();
-      }
-
-      loadFavorites() {
-        try {
-          const data = localStorage.getItem('evolutionaryArtFavorites');
-          return data ? JSON.parse(data) : [];
-        } catch (e) {
-          return [];
-        }
-      }
-
-      saveFavorites() {
-        try {
-          localStorage.setItem('evolutionaryArtFavorites', JSON.stringify(this.favorites));
-        } catch (e) {
-          console.error('Failed to save favorites:', e);
-        }
-      }
-
-      showLoading(show) {
-        const loading = document.getElementById('loading');
-        if (show) {
-          loading.classList.add('active');
-        } else {
-          loading.classList.remove('active');
-        }
+    // Load favorites from localStorage
+    function loadFavorites() {
+      const saved = localStorage.getItem('evolve_favorites');
+      if (saved) {
+        favorites = JSON.parse(saved);
+        renderFavorites();
       }
     }
 
-    // Initialize app
-    const app = new EvolutionaryArt();
+    function saveFavorites() {
+      localStorage.setItem('evolve_favorites', JSON.stringify(favorites));
+    }
+
+    function renderFavorites() {
+      const list = document.getElementById('favoritesList');
+      list.innerHTML = '';
+      favorites.forEach((fav, index) => {
+        const item = document.createElement('div');
+        item.className = 'favorite-item';
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+
+        const renderer = new Renderer(canvas, fav.genome);
+        renderer.render();
+
+        item.appendChild(canvas);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'favorite-delete';
+        deleteBtn.textContent = '×';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          favorites.splice(index, 1);
+          saveFavorites();
+          renderFavorites();
+        };
+        item.appendChild(deleteBtn);
+
+        item.onclick = () => {
+          currentParentGenome = JSON.parse(JSON.stringify(fav.genome));
+          generation = 0;
+          updateParentPreview();
+          breedNewGeneration();
+        };
+
+        list.appendChild(item);
+      });
+    }
+
+    // Update parent preview
+    function updateParentPreview() {
+      const canvas = document.getElementById('parentPreview');
+      const info = document.getElementById('parentInfo');
+
+      if (currentParentGenome) {
+        const renderer = new Renderer(canvas, currentParentGenome);
+        renderer.render();
+        info.textContent = `Generation: ${generation} | Layers: ${currentParentGenome.layers.length}`;
+      }
+    }
+
+    // Breed new generation (3 children with different seeds)
+    function breedNewGeneration() {
+      const mutationRate = parseInt(document.getElementById('mutationRate').value) / 100;
+      currentChildren = [];
+
+      // Create 3 mutated children with unique seeds
+      for (let i = 0; i < 3; i++) {
+        const childGenome = Genome.mutate(currentParentGenome, mutationRate);
+        // Give each child a unique seed
+        childGenome.seed = Math.floor(Math.random() * 1000000);
+        currentChildren.push(childGenome);
+      }
+
+      renderChildren();
+      showComparisonView();
+    }
+
+    function renderChildren() {
+      const canvases = document.querySelectorAll('.child-canvas');
+      canvases.forEach((canvas, index) => {
+        canvas.parentElement.classList.add('loading');
+      });
+
+      // Render with slight delay to show loading state
+      setTimeout(() => {
+        canvases.forEach((canvas, index) => {
+          const renderer = new Renderer(canvas, currentChildren[index]);
+          renderer.render();
+          canvas.parentElement.classList.remove('loading');
+        });
+      }, 50);
+    }
+
+    function showComparisonView() {
+      document.getElementById('comparisonView').style.display = 'flex';
+      document.getElementById('detailView').classList.remove('active');
+    }
+
+    function showDetailView(index) {
+      currentDetailIndex = index;
+      currentDetailGenome = currentChildren[index];
+
+      const canvas = document.getElementById('detailCanvas');
+      canvas.parentElement.classList.add('loading');
+
+      setTimeout(() => {
+        const renderer = new Renderer(canvas, currentDetailGenome);
+        renderer.render();
+        canvas.parentElement.classList.remove('loading');
+
+        document.getElementById('comparisonView').style.display = 'none';
+        document.getElementById('detailView').classList.add('active');
+      }, 50);
+    }
+
+    function breedFromChild(index) {
+      currentParentGenome = JSON.parse(JSON.stringify(currentChildren[index]));
+      generation++;
+      updateParentPreview();
+      breedNewGeneration();
+    }
+
+    // Event listeners
+    document.getElementById('sidebarToggle').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    });
+
+    document.getElementById('mutationRate').addEventListener('input', (e) => {
+      document.getElementById('mutationValue').textContent = e.target.value + '%';
+    });
+
+    document.getElementById('breedBtn').addEventListener('click', () => {
+      breedNewGeneration();
+    });
+
+    document.getElementById('randomStartBtn').addEventListener('click', () => {
+      const rng = new SeededRandom(Date.now());
+      currentParentGenome = Genome.random(rng);
+      generation = 0;
+      updateParentPreview();
+      breedNewGeneration();
+    });
+
+    document.querySelectorAll('.view-detail-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const index = parseInt(btn.dataset.index);
+        showDetailView(index);
+      });
+    });
+
+    document.querySelectorAll('.breed-from-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const index = parseInt(btn.dataset.index);
+        breedFromChild(index);
+      });
+    });
+
+    document.getElementById('saveGenomeBtn').addEventListener('click', () => {
+      favorites.push({
+        genome: JSON.parse(JSON.stringify(currentDetailGenome)),
+        timestamp: Date.now()
+      });
+      saveFavorites();
+      renderFavorites();
+      alert('Genome saved to favorites!');
+    });
+
+    document.getElementById('breedFromDetailBtn').addEventListener('click', () => {
+      currentParentGenome = JSON.parse(JSON.stringify(currentDetailGenome));
+      generation++;
+      updateParentPreview();
+      breedNewGeneration();
+    });
+
+    document.getElementById('regenerateBtn').addEventListener('click', () => {
+      // Same genotype, new seed
+      currentDetailGenome.seed = Math.floor(Math.random() * 1000000);
+      const canvas = document.getElementById('detailCanvas');
+      canvas.parentElement.classList.add('loading');
+
+      setTimeout(() => {
+        const renderer = new Renderer(canvas, currentDetailGenome);
+        renderer.render();
+        canvas.parentElement.classList.remove('loading');
+      }, 50);
+    });
+
+    document.getElementById('backToComparisonBtn').addEventListener('click', () => {
+      showComparisonView();
+    });
+
+    // Initialize
+    loadFavorites();
+    const rng = new SeededRandom(Date.now());
+    currentParentGenome = Genome.random(rng);
+    updateParentPreview();
+    breedNewGeneration();
   </script>
 </body>
 </html>

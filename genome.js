@@ -17,7 +17,8 @@ class Genome {
     'exclusion', 'hue', 'saturation', 'color', 'luminosity'
   ];
 
-  static PALETTE_SCHEMES = ['analogous', 'complementary', 'triadic', 'monochrome'];
+  // Favor colorful schemes - monochrome is rare
+  static PALETTE_SCHEMES = ['analogous', 'complementary', 'triadic', 'analogous', 'complementary', 'triadic', 'monochrome'];
 
   static random(rng) {
     const numLayers = rng.int(2, 6);
@@ -44,7 +45,7 @@ class Genome {
 
   static randomParams(algorithm, rng) {
     const baseParams = {
-      emphasis: rng.range(0.3, 1.0)
+      emphasis: rng.range(0.5, 1.0)  // Higher minimum to avoid too-faint layers
     };
 
     switch (algorithm) {

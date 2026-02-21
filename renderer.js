@@ -33,29 +33,29 @@ class Renderer {
         for (let i = 0; i < 5; i++) {
           palette.push({
             h: (baseHue + i * 15) % 360,
-            s: rng.range(40, 80),
-            l: rng.range(25, 75)
+            s: rng.range(55, 90),  // Higher saturation
+            l: rng.range(35, 70)   // Avoid too dark/light
           });
         }
         break;
 
       case 'complementary':
-        palette.push({ h: baseHue, s: rng.range(50, 80), l: rng.range(30, 60) });
-        palette.push({ h: (baseHue + 180) % 360, s: rng.range(50, 80), l: rng.range(30, 60) });
-        palette.push({ h: (baseHue + 30) % 360, s: rng.range(30, 50), l: rng.range(40, 70) });
-        palette.push({ h: (baseHue + 210) % 360, s: rng.range(30, 50), l: rng.range(40, 70) });
+        palette.push({ h: baseHue, s: rng.range(60, 90), l: rng.range(40, 65) });
+        palette.push({ h: (baseHue + 180) % 360, s: rng.range(60, 90), l: rng.range(40, 65) });
+        palette.push({ h: (baseHue + 30) % 360, s: rng.range(45, 75), l: rng.range(45, 70) });
+        palette.push({ h: (baseHue + 210) % 360, s: rng.range(45, 75), l: rng.range(45, 70) });
         break;
 
       case 'triadic':
         for (let i = 0; i < 3; i++) {
           palette.push({
             h: (baseHue + i * 120) % 360,
-            s: rng.range(50, 80),
-            l: rng.range(30, 70)
+            s: rng.range(60, 90),  // Higher saturation
+            l: rng.range(40, 70)   // Mid-range lightness
           });
         }
-        palette.push({ h: (baseHue + 60) % 360, s: rng.range(30, 50), l: rng.range(40, 70) });
-        palette.push({ h: (baseHue + 180) % 360, s: rng.range(30, 50), l: rng.range(40, 70) });
+        palette.push({ h: (baseHue + 60) % 360, s: rng.range(50, 80), l: rng.range(45, 70) });
+        palette.push({ h: (baseHue + 180) % 360, s: rng.range(50, 80), l: rng.range(45, 70) });
         break;
 
       case 'monochrome':
