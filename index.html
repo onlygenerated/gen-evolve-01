@@ -459,12 +459,13 @@
 
     // Breed new generation (3 children with different seeds)
     function breedNewGeneration() {
-      const mutationRate = parseInt(document.getElementById('mutationRate').value) / 100;
+      const mutationRate = parseInt(document.getElementById('mutationRate').value);
       currentChildren = [];
 
       // Create 3 mutated children with unique seeds
       for (let i = 0; i < 3; i++) {
-        const childGenome = Genome.mutate(currentParentGenome, mutationRate);
+        const rng = new SeededRandom(Date.now() + i * 1000);
+        const childGenome = Genome.mutate(currentParentGenome, mutationRate, rng);
         // Give each child a unique seed
         childGenome.seed = Math.floor(Math.random() * 1000000);
         currentChildren.push(childGenome);

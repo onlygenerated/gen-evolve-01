@@ -128,6 +128,16 @@ class VoronoiField {
 
     return { index: minIndex, distance: minDist, color: this.colors[minIndex] };
   }
+
+  getEdgeWeight(x, y, threshold = 1.05) {
+    const distances = this.points.map(p =>
+      Math.sqrt((x - p.x) ** 2 + (y - p.y) ** 2) / p.influence
+    ).sort((a, b) => a - b);
+
+    if (distances.length < 2) return 1;
+    const ratio = distances[1] / distances[0];
+    return ratio < threshold ? 0 : 1;
+  }
 }
 
 class FlowField {
