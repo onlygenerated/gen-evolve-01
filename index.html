@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evolutionary Generative Art</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a1a;
+      color: #eee;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #sidebar {
+      width: 250px;
+      background: #222;
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid #444;
+    }
+
+    #sidebar h2 {
+      font-size: 14px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    #controls {
+      margin-bottom: 30px;
+    }
+
+    #controls label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    #mutationRate {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+
+    #mutationValue {
+      font-size: 12px;
+      color: #888;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #444;
+      border: 1px solid #666;
+      color: #eee;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button:hover {
+      background: #555;
+    }
+
+    button:active {
+      background: #333;
+    }
+
+    #favorites {
+      margin-top: 20px;
+    }
+
+    #favoritesList {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .favorite-item {
+      position: relative;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .favorite-item:hover {
+      border-color: #666;
+    }
+
+    .favorite-item img {
+      width: 100%;
+      display: block;
+    }
+
+    .favorite-remove {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 20px;
+      height: 20px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: none;
+      padding: 0;
+      font-size: 14px;
+      line-height: 20px;
+      cursor: pointer;
+    }
+
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    #breedingView {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+    }
+
+    .breeding-canvas {
+      cursor: pointer;
+      border: 3px solid #333;
+      transition: border-color 0.2s;
+    }
+
+    .breeding-canvas:hover {
+      border-color: #666;
+    }
+
+    #detailView {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      flex: 1;
+    }
+
+    #detailView.active {
+      display: flex;
+    }
+
+    #detailCanvas {
+      border: 3px solid #444;
+      max-width: 100%;
+      max-height: calc(100vh - 200px);
+    }
+
+    #detailActions {
+      display: flex;
+      gap: 10px;
+    }
+
+    #detailActions button {
+      width: auto;
+      padding: 10px 20px;
+    }
+
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      padding: 20px 40px;
+      border: 1px solid #666;
+      display: none;
+    }
+
+    #loading.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div id="controls">
+      <h2>Controls</h2>
+      <label for="mutationRate">Mutation Rate</label>
+      <input type="range" id="mutationRate" min="0" max="100" value="50">
+      <div id="mutationValue">50%</div>
+      <button id="newGeneration">New Random Generation</button>
+    </div>
+
+    <div id="favorites">
+      <h2>Favorites</h2>
+      <div id="favoritesList"></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="breedingView">
+      <canvas class="breeding-canvas" width="400" height="400" data-index="0"></canvas>
+      <canvas class="breeding-canvas" width="400" height="400" data-index="1"></canvas>
+      <canvas class="breeding-canvas" width="400" height="400" data-index="2"></canvas>
+    </div>
+
+    <div id="detailView">
+      <canvas id="detailCanvas" width="1200" height="1200"></canvas>
+      <div id="detailActions">
+        <button id="saveToFavorites">Save to Favorites</button>
+        <button id="continueBreedin">Continue Breeding</button>
+        <button id="regenerate">Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading">
+    <div>Rendering...</div>
+  </div>
+
+  <script src="../gen-complex-01/sediment.js"></script>
+  <script src="algorithms.js"></script>
+  <script src="genome.js"></script>
+  <script src="renderer.js"></script>
+  <script>
+    class EvolutionaryArt {
+      constructor() {
+        this.currentGeneration = [];
+        this.selectedGenome = null;
+        this.favorites = this.loadFavorites();
+        this.mutationRate = 50;
+
+        this.setupEventListeners();
+        this.initializeGeneration();
+        this.renderFavorites();
+      }
+
+      setupEventListeners() {
+        // Mutation rate slider
+        const slider = document.getElementById('mutationRate');
+        const valueDisplay = document.getElementById('mutationValue');
+        slider.addEventListener('input', (e) => {
+          this.mutationRate = parseInt(e.target.value);
+          valueDisplay.textContent = `${this.mutationRate}%`;
+        });
+
+        // New generation button
+        document.getElementById('newGeneration').addEventListener('click', () => {
+          this.initializeGeneration();
+        });
+
+        // Breeding canvases
+        document.querySelectorAll('.breeding-canvas').forEach(canvas => {
+          canvas.addEventListener('click', () => {
+            const index = parseInt(canvas.dataset.index);
+            this.selectGenome(index);
+          });
+        });
+
+        // Detail view buttons
+        document.getElementById('saveToFavorites').addEventListener('click', () => {
+          this.saveToFavorites();
+        });
+
+        document.getElementById('continueBreedin').addEventListener('click', () => {
+          this.continueBreedin();
+        });
+
+        document.getElementById('regenerate').addEventListener('click', () => {
+          this.regenerate();
+        });
+      }
+
+      initializeGeneration() {
+        this.showLoading(true);
+
+        setTimeout(() => {
+          const rng = new SeededRandom(Date.now());
+          this.currentGeneration = [];
+
+          for (let i = 0; i < 3; i++) {
+            this.currentGeneration.push(Genome.random(rng));
+          }
+
+          this.renderGeneration();
+          this.showLoading(false);
+        }, 50);
+      }
+
+      renderGeneration() {
+        const canvases = document.querySelectorAll('.breeding-canvas');
+
+        this.currentGeneration.forEach((genome, i) => {
+          Renderer.render(canvases[i], genome);
+        });
+      }
+
+      selectGenome(index) {
+        this.selectedGenome = this.currentGeneration[index];
+        this.showDetailView();
+      }
+
+      showDetailView() {
+        this.showLoading(true);
+
+        setTimeout(() => {
+          document.getElementById('breedingView').style.display = 'none';
+          document.getElementById('detailView').classList.add('active');
+
+          const detailCanvas = document.getElementById('detailCanvas');
+          Renderer.render(detailCanvas, this.selectedGenome);
+
+          this.showLoading(false);
+        }, 50);
+      }
+
+      hideDetailView() {
+        document.getElementById('detailView').classList.remove('active');
+        document.getElementById('breedingView').style.display = 'flex';
+      }
+
+      saveToFavorites() {
+        if (!this.selectedGenome) return;
+
+        const dataURL = Renderer.renderToDataURL(this.selectedGenome, 400, 400);
+
+        this.favorites.push({
+          genome: this.selectedGenome,
+          thumbnail: dataURL,
+          timestamp: Date.now()
+        });
+
+        this.saveFavorites();
+        this.renderFavorites();
+      }
+
+      continueBreedin() {
+        if (!this.selectedGenome) return;
+
+        this.showLoading(true);
+
+        setTimeout(() => {
+          const rng = new SeededRandom(Date.now());
+
+          // Generate 3 mutations of the selected genome
+          this.currentGeneration = [];
+          for (let i = 0; i < 3; i++) {
+            this.currentGeneration.push(
+              Genome.mutate(this.selectedGenome, this.mutationRate, rng)
+            );
+          }
+
+          this.hideDetailView();
+          this.renderGeneration();
+          this.showLoading(false);
+        }, 50);
+      }
+
+      regenerate() {
+        if (!this.selectedGenome) return;
+
+        this.showLoading(true);
+
+        setTimeout(() => {
+          const detailCanvas = document.getElementById('detailCanvas');
+
+          // Create new seed for same genotype
+          const rng = new SeededRandom(Date.now());
+          this.selectedGenome.seed = rng.int(0, 1000000);
+
+          Renderer.render(detailCanvas, this.selectedGenome);
+          this.showLoading(false);
+        }, 50);
+      }
+
+      renderFavorites() {
+        const container = document.getElementById('favoritesList');
+        container.innerHTML = '';
+
+        this.favorites.slice().reverse().forEach((fav, i) => {
+          const actualIndex = this.favorites.length - 1 - i;
+
+          const div = document.createElement('div');
+          div.className = 'favorite-item';
+
+          const img = document.createElement('img');
+          img.src = fav.thumbnail;
+          img.addEventListener('click', () => {
+            this.loadFavorite(actualIndex);
+          });
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'favorite-remove';
+          removeBtn.textContent = '×';
+          removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.removeFavorite(actualIndex);
+          });
+
+          div.appendChild(img);
+          div.appendChild(removeBtn);
+          container.appendChild(div);
+        });
+      }
+
+      loadFavorite(index) {
+        this.selectedGenome = JSON.parse(JSON.stringify(this.favorites[index].genome));
+        this.showDetailView();
+      }
+
+      removeFavorite(index) {
+        this.favorites.splice(index, 1);
+        this.saveFavorites();
+        this.renderFavorites();
+      }
+
+      loadFavorites() {
+        try {
+          const data = localStorage.getItem('evolutionaryArtFavorites');
+          return data ? JSON.parse(data) : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      saveFavorites() {
+        try {
+          localStorage.setItem('evolutionaryArtFavorites', JSON.stringify(this.favorites));
+        } catch (e) {
+          console.error('Failed to save favorites:', e);
+        }
+      }
+
+      showLoading(show) {
+        const loading = document.getElementById('loading');
+        if (show) {
+          loading.classList.add('active');
+        } else {
+          loading.classList.remove('active');
+        }
+      }
+    }
+
+    // Initialize app
+    const app = new EvolutionaryArt();
+  </script>
+</body>
+</html>
